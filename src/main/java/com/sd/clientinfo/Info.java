@@ -9,9 +9,10 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -39,7 +40,15 @@ public class Info extends HttpServlet {
             bean.headers.put(headerName, req.getHeader(headerName));
         }
         bean.body = IOUtils.toString(req.getInputStream(), Charset.defaultCharset());
-        resp.getWriter().write(gson.toJson(bean));
+        String json = gson.toJson(bean);
+        resp.getWriter().write(json);
+        Mixin.wLock.lock();
+        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(Result.class.getResource("/result.json").getPath()))) {
+            out.write(json.getBytes());
+        } finally {
+            Mixin.wLock.unlock();
+        }
+
     }
 
     @Override
